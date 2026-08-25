@@ -1,1 +1,48 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=/rxorbit-approved.html"><title>RxOrbit</title></head><body><p>Opening RxOrbit…</p><script>location.replace('/rxorbit-approved.html')</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RxOrbit — Ecogreen Integration Demo</title>
+<style>
+:root{--ink:#172033;--muted:#687386;--line:#e7eaf0;--bg:#f7f8fa;--card:#fff;--accent:#1f7a62;--soft:#e8f5f0;--danger:#b54747}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,sans-serif}.app{max-width:1100px;margin:auto;padding:22px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.brand{font-size:21px;font-weight:800}.brand span{font-weight:500;color:var(--muted)}button{font:inherit;cursor:pointer}.sync{border:0;background:var(--accent);color:#fff;border-radius:10px;padding:11px 15px;font-weight:750}.sync:disabled{opacity:.6;cursor:wait}.status{font-size:12px;color:var(--muted);margin:10px 0 20px}.grid{display:grid;grid-template-columns:1fr 1.5fr;gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:800}.h{font-size:20px;font-weight:800;margin:5px 0 3px}.sub{font-size:13px;color:var(--muted)}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:18px}.metric{border:1px solid var(--line);border-radius:12px;padding:13px}.metric b{display:block;font-size:23px;margin-top:4px}.list{margin-top:15px}.opp{border:1px solid var(--line);border-radius:13px;padding:14px;margin:9px 0;display:flex;align-items:center;gap:12px;cursor:pointer}.opp:hover{border-color:#b8d9cf}.initial{width:38px;height:38px;border-radius:11px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-weight:800}.person{flex:1}.person b{display:block;font-size:14px}.person small{color:var(--muted)}.score{font-weight:800;color:var(--accent)}.pipeline{display:flex;gap:7px;overflow:auto;padding:5px 0 18px}.step{min-width:100px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.step b{display:block;font-size:12px}.step span{font-size:10px;color:var(--muted)}.feed{font-size:13px}.event{padding:10px 0;border-bottom:1px solid var(--line)}.event:last-child{border:0}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:7px}.modal{position:fixed;inset:0;background:#17203355;display:none;align-items:flex-end;justify-content:center;padding:16px}.modal.show{display:flex}.sheet{width:min(560px,100%);background:#fff;border-radius:18px;padding:20px}.sheethead{display:flex;justify-content:space-between;gap:12px}.close{border:0;background:#f1f3f5;border-radius:9px;width:34px;height:34px}.message{margin:15px 0;background:#f7f8fa;border:1px solid var(--line);padding:14px;border-radius:12px;line-height:1.5;font-size:14px}.consent{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:var(--muted);margin:13px 0}.send{width:100%;border:0;background:var(--accent);color:#fff;border-radius:11px;padding:13px;font-weight:800}.send:disabled{opacity:.45}.pill{font-size:11px;background:var(--soft);color:var(--accent);padding:5px 8px;border-radius:20px;font-weight:800}
+@media(max-width:760px){.app{padding:15px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(3,1fr)}.top{align-items:flex-start}.sync{padding:10px 11px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div><div class="brand">RxOrbit <span>× Ecogreen</span></div><div class="sub">Pharmacy re-buy intelligence</div></div><button class="sync" id="sync">Sync Ecogreen</button></header>
+  <div class="status" id="status">Demo mode · Ecogreen API is simulated</div>
+  <div class="grid">
+    <main>
+      <section class="card">
+        <div class="eyebrow">Today's workspace</div><div class="h">Best opportunities</div><div class="sub">Only customers with a strong repeat signal.</div>
+        <div class="metrics"><div class="metric"><span class="sub">Due now</span><b id="due">0</b></div><div class="metric"><span class="sub">Synced</span><b id="customers">0</b></div><div class="metric"><span class="sub">Avg score</span><b id="avg">0%</b></div></div>
+        <div class="list" id="opportunities"></div>
+      </section>
+    </main>
+    <aside>
+      <section class="card"><div class="eyebrow">Live pipeline</div><div class="h">Ecogreen → RxOrbit</div><div class="pipeline"><div class="step"><b>Ecogreen</b><span>Customers + sales</span></div><div class="step"><b>Normalize</b><span>Map records</span></div><div class="step"><b>Predict</b><span>Re-buy score</span></div><div class="step"><b>Consent</b><span>Review</span></div><div class="step"><b>WhatsApp</b><span>Prepared send</span></div></div></section>
+      <section class="card" style="margin-top:18px"><div class="eyebrow">Activity</div><div class="h">Integration events</div><div class="feed" id="feed"><div class="event"><span class="dot"></span>Waiting for first sync</div></div></section>
+    </aside>
+  </div>
+</div>
+<div class="modal" id="modal"><div class="sheet"><div class="sheethead"><div><div class="eyebrow">Customer review</div><div class="h" id="modalName"></div><div class="sub" id="modalMeta"></div></div><button class="close" id="close">×</button></div><div class="message" id="message"></div><label class="consent"><input id="consent" type="checkbox"> I confirm the customer has consented to WhatsApp outreach and is not suppressed.</label><button class="send" id="send" disabled>Simulate WhatsApp send</button></div></div>
+<script type="module">
+import { demoEcogreenPayload, buildOpportunities } from './src/rxorbit.js';
+const $=id=>document.getElementById(id);let opportunities=[];
+function event(text){$('feed').insertAdjacentHTML('afterbegin',`<div class="event"><span class="dot"></span>${text}</div>`)}
+function render(){
+ $('customers').textContent=opportunities.length;
+ const due=opportunities.filter(x=>x.dueLabel==='today').length;$('due').textContent=due;
+ $('avg').textContent=opportunities.length?Math.round(opportunities.reduce((a,x)=>a+x.score,0)/opportunities.length)+'%':'0%';
+ $('opportunities').innerHTML=opportunities.map((x,i)=>`<div class="opp" data-i="${i}"><div class="initial">${x.name[0]}</div><div class="person"><b>${x.name}</b><small>${x.dueLabel} · ${x.purchases.length} purchases</small></div><span class="score">${x.score}%</span></div>`).join('');
+ document.querySelectorAll('.opp').forEach(el=>el.onclick=()=>open(Number(el.dataset.i)));
+}
+function open(i){const x=opportunities[i];$('modalName').textContent=x.name;$('modalMeta').textContent=`${x.mobile} · ${x.language} · ${x.score}% likelihood`;$('message').textContent=x.message;$('consent').checked=false;$('send').disabled=true;$('modal').classList.add('show');$('send').dataset.i=i}
+$('close').onclick=()=>$('modal').classList.remove('show');$('consent').onchange=e=>$('send').disabled=!e.target.checked;
+$('send').onclick=()=>{const x=opportunities[Number($('send').dataset.i)];$('modal').classList.remove('show');event(`WhatsApp prepared for ${x.name} · demo send recorded`)};
+$('sync').onclick=async()=>{const b=$('sync');b.disabled=true;b.textContent='Syncing…';$('status').textContent='Connecting to simulated Ecogreen API…';await new Promise(r=>setTimeout(r,650));opportunities=buildOpportunities(demoEcogreenPayload,'2026-08-25');render();event(`Ecogreen sync complete · ${demoEcogreenPayload.customers.length} customers · ${demoEcogreenPayload.sales.length} sales`);$('status').textContent='Demo sync complete · data normalized and scored by RxOrbit';b.disabled=false;b.textContent='Sync Ecogreen'};
+$('sync').click();
+</script>
+</body></html>
