@@ -1,0 +1,257 @@
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4/+esm';
+
+const SUPABASE_URL = 'https://qpqgdrpedeueeqczadwu.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_nXc4gZYogo-5OiMO699qKQ_S98182j4';
+export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const state = { user: null, pharmacy: null, role: null, opportunities: [], selected: null, outreach: null };
+
+function message(text, ok = false) {
+  const el = $('#message');
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = `message ${ok ? 'ok' : ''}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
+}
+
+function languageName(value) {
+  const v = String(value || '').toLowerCase();
+  if (v.startsWith('mr') || v.startsWith('mar')) return 'Marathi';
+  if (v.startsWith('hi') || v.startsWith('hin')) return 'Hindi';
+  return 'English';
+}
+
+function dueLabel(opportunity) {
+  const interval = Number(opportunity.predicted_interval_days || 30);
+  const days = Number(opportunity.days_since_purchase ?? 0);
+  const delta = days - interval;
+  if (delta >= 0) return 'Due now';
+  if (delta === -1) return 'Tomorrow';
+  return `Due in ${Math.abs(delta)} days`;
+}
+
+function initials(name) {
+  return String(name || '?').split(/\s+/).slice(0, 2).map((x) => x[0]).join('').toUpperCase();
+}
+
+async function getSessionUser() {
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return user;
+}
+
+async function loadMembership() {
+  const { data: staff, error } = await supabase.from('staff').select('pharmacy_id,role,active').eq('id', state.user.id).eq('active', true).maybeSingle();
+  if (error) throw error;
+  if (!staff) throw new Error('Your account is not linked to an active pharmacy. Ask the pharmacy owner to add you.');
+  state.role = staff.role;
+  const { data: pharmacy, error: pharmacyError } = await supabase.from('pharmacies').select('id,name').eq('id', staff.pharmacy_id).single();
+  if (pharmacyError) throw pharmacyError;
+  state.pharmacy = pharmacy;
+}
+
+async function loadDashboard() {
+  const [opportunityResult, customerResult, metricsResult] = await Promise.all([
+    supabase.from('opportunities').select('id,customer_id,score,tier,predicted_interval_days,days_since_purchase,reason,calculated_at,customers!inner(id,name,phone,preferred_language,consent_status,suppressed,suppression_reason)').neq('tier', 'excluded').order('score', { ascending: false }).limit(50),
+    supabase.from('customers').select('id,name,phone,preferred_language,consent_status,suppressed').order('name').limit(500),
+    supabase.rpc('dashboard_metrics')
+  ]);
+  if (opportunityResult.error) throw opportunityResult.error;
+  if (customerResult.error) throw customerResult.error;
+  if (metricsResult.error) throw metricsResult.error;
+  state.opportunities = opportunityResult.data || [];
+  renderDashboard(metricsResult.data || {});
+  renderOpportunities();
+  renderCustomers(customerResult.data || []);
+}
+
+function renderDashboard(metrics) {
+  $('#pharmacyName').textContent = state.pharmacy?.name || 'Pharmacy';
+  $('#role').textContent = state.role || '';
+  $('#dueCount').textContent = state.opportunities.filter((o) => Number(o.days_since_purchase ?? 0) >= Number(o.predicted_interval_days || 30)).length;
+  $('#highCount').textContent = state.opportunities.filter((o) => Number(o.score) >= 70).length;
+  $('#sentCount').textContent = metrics.outreach ?? 0;
+  $('#purchasedCount').textContent = metrics.purchased ?? 0;
+  $('#revenueCount').textContent = `₹${Number(metrics.revenue || 0).toLocaleString('en-IN')}`;
+  $('#opportunityCount').textContent = metrics.opportunities ?? state.opportunities.length;
+  $('#customerCount').textContent = metrics.customers ?? '—';
+
+  const rows = state.opportunities.slice(0, 6).map((o) => {
+    const c = o.customers;
+    const score = Math.round(Number(o.score || 0));
+    const blocked = c.suppressed || c.consent_status !== 'granted' || !c.phone;
+    return `<div class="row">
+      <div class="name">${escapeHtml(c.name)}</div>
+      <div class="med">${escapeHtml(languageName(c.preferred_language))} · ${escapeHtml(c.phone || 'No phone')}</div>
+      <div>${escapeHtml(dueLabel(o))}</div>
+      <div class="conf">${score}%</div>
+      <button class="wa ${blocked ? 'blocked' : ''}" data-action="review" data-id="${o.id}">${blocked ? 'Review' : 'Prepare'}</button>
+    </div>`;
+  }).join('');
+  $('#opportunityRows').innerHTML = rows || '<div class="empty">No active refill opportunities yet.</div>';
+}
+
+function renderOpportunities() {
+  const html = state.opportunities.map((o) => {
+    const c = o.customers;
+    const score = Math.round(Number(o.score || 0));
+    const blocked = c.suppressed || c.consent_status !== 'granted' || !c.phone;
+    return `<button class="opp-card" data-action="review" data-id="${o.id}">
+      <div class="opp-top"><span class="initial">${initials(c.name)}</span><span class="score">${score}%</span></div>
+      <strong>${escapeHtml(c.name)}</strong>
+      <span>${escapeHtml(dueLabel(o))} · ${escapeHtml(o.tier || 'opportunity')}</span>
+      <small>${blocked ? 'Outreach blocked until consent/phone checks pass' : 'Ready for pharmacist review'}</small>
+    </button>`;
+  }).join('');
+  $('#opportunityCards').innerHTML = html || '<div class="empty">No opportunities.</div>';
+}
+
+function renderCustomers(customers) {
+  $('#customerList').innerHTML = customers.slice(0, 80).map((c) => `<div class="customer-row"><div><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.phone || 'No phone')} · ${escapeHtml(languageName(c.preferred_language))}</small></div><span class="customer-status ${c.suppressed ? 'danger' : c.consent_status === 'granted' ? 'ok' : ''}">${c.suppressed ? 'STOP' : c.consent_status || 'unknown'}</span></div>`).join('') || '<div class="empty">No customers found.</div>';
+}
+
+async function openReview(opportunityId) {
+  const opportunity = state.opportunities.find((o) => o.id === opportunityId);
+  if (!opportunity) return;
+  state.selected = opportunity;
+  const c = opportunity.customers;
+  const blocked = c.suppressed || c.consent_status !== 'granted' || !c.phone;
+  $('#profileInitial').textContent = initials(c.name);
+  $('#profileName').textContent = c.name;
+  $('#profileMeta').textContent = `${c.phone || 'No phone'} · ${languageName(c.preferred_language)} · ${Math.round(Number(opportunity.score || 0))}% likelihood`;
+  $('#consentState').textContent = c.suppressed ? 'Permanently suppressed (STOP)' : c.consent_status === 'granted' ? 'Consent granted' : `Consent: ${c.consent_status || 'unknown'}`;
+  $('#consentState').className = `consent ${c.suppressed || c.consent_status !== 'granted' ? 'danger' : 'ok'}`;
+  $('#reviewDue').textContent = dueLabel(opportunity);
+  $('#reviewReason').textContent = buildReason(opportunity);
+  $('#preparedMessage').value = blocked ? 'Outreach is blocked until consent, suppression and phone checks pass.' : 'Preparing message…';
+  $('#prepareBtn').disabled = blocked;
+  $('#sendBtn').disabled = true;
+  $('#reviewModal').classList.add('open');
+
+  if (!blocked) {
+    try {
+      const { data, error } = await supabase.functions.invoke('rxorbit-workflow', { body: { action: 'prepare', customerId: c.id } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      state.outreach = data.outreach;
+      $('#preparedMessage').value = data.outreach.message_body;
+      $('#sendBtn').disabled = false;
+      $('#prepareBtn').textContent = 'Prepared';
+    } catch (error) {
+      $('#preparedMessage').value = error.message || 'Unable to prepare outreach.';
+      $('#sendBtn').disabled = true;
+    }
+  }
+}
+
+function buildReason(o) {
+  const r = o.reason || {};
+  const count = r.purchase_count ?? '—';
+  const interval = r.average_interval_days ?? o.predicted_interval_days ?? '—';
+  return `${count} purchase${Number(count) === 1 ? '' : 's'} observed · average repeat interval ${interval} days · ${Number(o.days_since_purchase ?? 0)} days since last purchase.`;
+}
+
+async function markEvent(event) {
+  if (!state.outreach) return;
+  const { data, error } = await supabase.functions.invoke('rxorbit-workflow', { body: { action: 'event', outreachId: state.outreach.id, event } });
+  if (error || data?.error) throw error || new Error(data.error);
+}
+
+function setupAuth() {
+  $('#loginBtn').onclick = async () => {
+    const email = $('#email').value.trim();
+    const password = $('#password').value;
+    if (!email || !password) return message('Enter your email and password.');
+    const button = $('#loginBtn');
+    button.disabled = true;
+    button.textContent = 'Logging in…';
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    button.disabled = false;
+    button.textContent = 'Log in';
+    if (error) return message(error.message);
+  };
+
+  $('#google').onclick = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    if (error) message(error.message);
+  };
+
+  $('#forgot').onclick = async () => {
+    const email = $('#email').value.trim();
+    if (!email) return message('Enter your email first, then choose Forgot password.');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+    message(error ? error.message : 'If that account exists, a password reset email has been requested.', !error);
+  };
+
+  $('#signup').onclick = () => message('Ask the pharmacy owner to create or invite your staff account.');
+  $('#logout').onclick = () => supabase.auth.signOut();
+}
+
+function setupUI() {
+  $('#toggle').onclick = () => {
+    const input = $('#password');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    $('#toggle').textContent = input.type === 'password' ? '👁' : '🙈';
+  };
+  document.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-action]');
+    if (target?.dataset.action === 'review') openReview(target.dataset.id);
+    if (event.target.id === 'closeReview' || event.target.id === 'reviewModal') $('#reviewModal').classList.remove('open');
+  });
+  $('#sendBtn').onclick = async () => {
+    try {
+      $('#sendBtn').disabled = true;
+      await markEvent('sent');
+      $('#sendStatus').textContent = 'Reviewed and recorded. Connect your WhatsApp Business provider to deliver the message.';
+      $('#sendStatus').className = 'message ok';
+    } catch (error) {
+      $('#sendStatus').textContent = error.message || 'Unable to record outreach.';
+      $('#sendStatus').className = 'message';
+      $('#sendBtn').disabled = false;
+    }
+  };
+  $('#searchCustomers').addEventListener('input', (event) => {
+    const query = event.target.value.toLowerCase().trim();
+    $$('#customerList .customer-row').forEach((row) => { row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none'; });
+  });
+  $$('.nav-btn').forEach((button) => button.onclick = () => {
+    $$('.nav-btn').forEach((b) => b.classList.toggle('active', b === button));
+    $$('.view').forEach((v) => v.classList.toggle('active', v.id === button.dataset.view));
+  });
+}
+
+async function showDashboard() {
+  $('#login').style.display = 'none';
+  $('#dashboard').style.display = 'block';
+  try {
+    await loadMembership();
+    await loadDashboard();
+  } catch (error) {
+    $('#dashboardError').textContent = error.message || 'Unable to load your pharmacy.';
+    $('#dashboardError').style.display = 'block';
+  }
+}
+
+function showLogin() {
+  $('#login').style.display = 'grid';
+  $('#dashboard').style.display = 'none';
+}
+
+async function boot() {
+  setupAuth();
+  setupUI();
+  const { data: { session } } = await supabase.auth.getSession();
+  state.user = session?.user || null;
+  if (state.user) await showDashboard(); else showLogin();
+  supabase.auth.onAuthStateChange(async (_event, sessionState) => {
+    state.user = sessionState?.user || null;
+    if (state.user) await showDashboard(); else showLogin();
+  });
+}
+
+boot();
