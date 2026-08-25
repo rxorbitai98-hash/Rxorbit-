@@ -1,0 +1,8 @@
+{
+  "name": "rxorbit-ecogreen-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/integration.test.js"
+  }
+}
