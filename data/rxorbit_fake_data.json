@@ -1,0 +1,38 @@
+{
+  "meta": {"dataset":"RxOrbit fake development data","purpose":"UI/backend integration testing only","generated_for_date":"2026-08-30","currency":"INR","note":"No real customer data. Replace with Supabase queries before production."},
+  "pharmacy": {"id":"PHARM-001","name":"Wellness Pharmacy","timezone":"Asia/Kolkata"},
+  "customers": [
+    {"id":"CUS-1001","name":"Priya Patil","phone":"+919876500101","language":"Marathi","consent_whatsapp":true,"last_purchase":"2026-08-01"},
+    {"id":"CUS-1002","name":"Amit Kulkarni","phone":"+919876500102","language":"Hindi","consent_whatsapp":true,"last_purchase":"2026-07-30"},
+    {"id":"CUS-1003","name":"Sneha Jadhav","phone":"+919876500103","language":"English","consent_whatsapp":true,"last_purchase":"2026-07-29"},
+    {"id":"CUS-1004","name":"Rahul Deshmukh","phone":"+919876500104","language":"Marathi","consent_whatsapp":true,"last_purchase":"2026-07-28"},
+    {"id":"CUS-1005","name":"Neha Joshi","phone":"+919876500105","language":"Hindi","consent_whatsapp":true,"last_purchase":"2026-07-26"},
+    {"id":"CUS-1006","name":"Suresh Pawar","phone":"+919876500106","language":"Marathi","consent_whatsapp":false,"last_purchase":"2026-07-25"},
+    {"id":"CUS-1007","name":"Kavita Shinde","phone":"+919876500107","language":"English","consent_whatsapp":true,"last_purchase":"2026-07-24"},
+    {"id":"CUS-1008","name":"Vikram More","phone":"+919876500108","language":"Hindi","consent_whatsapp":true,"last_purchase":"2026-07-23"}
+  ],
+  "purchases": [
+    {"id":"PUR-2001","customer_id":"CUS-1001","medicine":"Glycomet GP 1","purchase_date":"2026-08-01","quantity":30,"days_supply":30,"price_inr":450},
+    {"id":"PUR-2002","customer_id":"CUS-1002","medicine":"Telma 40","purchase_date":"2026-07-30","quantity":30,"days_supply":30,"price_inr":320},
+    {"id":"PUR-2003","customer_id":"CUS-1003","medicine":"Thyronorm 50","purchase_date":"2026-07-29","quantity":30,"days_supply":30,"price_inr":210},
+    {"id":"PUR-2004","customer_id":"CUS-1004","medicine":"Atorva 10","purchase_date":"2026-07-28","quantity":30,"days_supply":30,"price_inr":280},
+    {"id":"PUR-2005","customer_id":"CUS-1005","medicine":"Amlokind 5","purchase_date":"2026-07-26","quantity":30,"days_supply":30,"price_inr":190},
+    {"id":"PUR-2006","customer_id":"CUS-1006","medicine":"Pantocid 40","purchase_date":"2026-07-25","quantity":15,"days_supply":15,"price_inr":165},
+    {"id":"PUR-2007","customer_id":"CUS-1007","medicine":"Rosuvas 10","purchase_date":"2026-07-24","quantity":30,"days_supply":30,"price_inr":390},
+    {"id":"PUR-2008","customer_id":"CUS-1008","medicine":"Janumet 50/500","purchase_date":"2026-07-23","quantity":30,"days_supply":30,"price_inr":850}
+  ],
+  "opportunities": [
+    {"id":"OPP-3001","customer_id":"CUS-1001","purchase_id":"PUR-2001","medicine":"Glycomet GP 1","due_date":"2026-08-30","priority":"High","confidence":0.94,"expected_value_inr":450,"reason":"30-day refill cycle","status":"ready"},
+    {"id":"OPP-3002","customer_id":"CUS-1002","purchase_id":"PUR-2002","medicine":"Telma 40","due_date":"2026-08-31","priority":"High","confidence":0.91,"expected_value_inr":320,"reason":"30-day refill cycle","status":"ready"},
+    {"id":"OPP-3003","customer_id":"CUS-1003","purchase_id":"PUR-2003","medicine":"Thyronorm 50","due_date":"2026-08-31","priority":"Medium","confidence":0.78,"expected_value_inr":210,"reason":"30-day refill cycle","status":"ready"},
+    {"id":"OPP-3004","customer_id":"CUS-1004","purchase_id":"PUR-2004","medicine":"Atorva 10","due_date":"2026-09-01","priority":"Medium","confidence":0.72,"expected_value_inr":280,"reason":"30-day refill cycle","status":"ready"},
+    {"id":"OPP-3005","customer_id":"CUS-1005","purchase_id":"PUR-2005","medicine":"Amlokind 5","due_date":"2026-09-02","priority":"Medium","confidence":0.69,"expected_value_inr":190,"reason":"30-day refill cycle","status":"queued"},
+    {"id":"OPP-3006","customer_id":"CUS-1006","purchase_id":"PUR-2006","medicine":"Pantocid 40","due_date":"2026-08-30","priority":"High","confidence":0.88,"expected_value_inr":165,"reason":"Short 15-day cycle","status":"blocked_consent"}
+  ],
+  "outreach": [
+    {"id":"OUT-4001","opportunity_id":"OPP-3001","customer_id":"CUS-1001","channel":"WhatsApp","status":"contacted","sent_at":"2026-08-29T10:15:00+05:30","template":"refill_due_v1"},
+    {"id":"OUT-4002","opportunity_id":"OPP-3002","customer_id":"CUS-1002","channel":"WhatsApp","status":"replied","sent_at":"2026-08-29T11:05:00+05:30","template":"refill_due_v1","reply":"Yes, please keep it ready."},
+    {"id":"OUT-4003","opportunity_id":"OPP-3003","customer_id":"CUS-1003","channel":"WhatsApp","status":"purchased","sent_at":"2026-08-28T15:20:00+05:30","template":"refill_due_v1","purchase_attributed":true},
+    {"id":"OUT-4004","opportunity_id":"OPP-3004","customer_id":"CUS-1004","channel":"WhatsApp","status":"not_now","sent_at":"2026-08-29T12:10:00+05:30","template":"refill_due_v1","next_contact_date":"2026-09-03"}
+  ]
+}
